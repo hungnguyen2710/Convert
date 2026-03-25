@@ -46,7 +46,7 @@ services:
     container_name: convert_phpmyadmin
     restart: always
     ports:
-      - "8080:80"
+      - "8989:80"
     environment:
       PMA_HOST: mysql
       PMA_USER: root
