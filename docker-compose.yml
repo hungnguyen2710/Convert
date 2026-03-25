@@ -29,8 +29,8 @@ services:
     container_name: convert_mysql
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: covert
-      MYSQL_DATABASE: convert@123^^123
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: laravel
     ports:
       - "3306:3306"
     volumes:
