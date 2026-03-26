@@ -4,13 +4,20 @@ FROM php:8.3-fpm
 RUN apt-get update && apt-get install -y \
     git unzip curl libzip-dev zip libpng-dev libonig-dev \
     libxml2-dev libxslt1-dev \
-    python3 python3-pip \
+    python3 python3-pip python3-dev \
+    build-essential \
+    libgl1 \
     fonts-dejavu \
     default-jre \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Install pdf2docx
+# Upgrade pip (QUAN TRỌNG)
+RUN pip3 install --upgrade pip
+
+# Install pdf2docx + dependencies
+RUN pip3 install numpy
+RUN pip3 install opencv-python-headless
 RUN pip3 install pdf2docx
 
 # PHP extensions
