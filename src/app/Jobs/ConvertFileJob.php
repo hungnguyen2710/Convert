@@ -33,49 +33,30 @@ class ConvertFileJob implements ShouldQueue
             $input = storage_path('app/input/' . $conversion->input_file);
             $outputDir = storage_path('app/output');
 
-            // ✅ Check file tồn tại
             if (!file_exists($input)) {
                 throw new \Exception("Input file not found: " . $input);
             }
 
-            // ✅ Tạo thư mục output
             if (!file_exists($outputDir)) {
                 mkdir($outputDir, 0777, true);
             }
 
-            // ✅ FIX QUAN TRỌNG: LibreOffice trong Docker
-            $profileDir = '/tmp/libreoffice-profile';
+            $outputFile = pathinfo($conversion->input_file, PATHINFO_FILENAME) . '.docx';
+            $outputPath = $outputDir . '/' . $outputFile;
 
-            if (!file_exists($profileDir)) {
-                mkdir($profileDir, 0777, true);
-            }
-
-            // ✅ Command chuẩn production
-            $cmd = "HOME=/tmp /usr/bin/libreoffice --headless --nologo --nofirststartwizard "
-                . "-env:UserInstallation=file://{$profileDir} "
-                . "--convert-to docx "
-                . escapeshellarg($input)
-                . " --outdir "
-                . escapeshellarg($outputDir);
+            // 🔥 COMMAND MỚI (pdf2docx)
+            $cmd = "python3 -m pdf2docx convert "
+                . escapeshellarg($input) . " "
+                . escapeshellarg($outputPath);
 
             Log::info("Running command: " . $cmd);
 
             exec($cmd . " 2>&1", $out, $code);
 
-            Log::info("LibreOffice output: " . implode("\n", $out));
+            Log::info("pdf2docx output: " . implode("\n", $out));
 
-            // ❗ Check kỹ hơn (tránh fake DONE)
-            if ($code !== 0 || empty($out)) {
+            if ($code !== 0 || !file_exists($outputPath)) {
                 throw new \Exception("Convert failed: " . implode("\n", $out));
-            }
-
-            // ✅ Xác định file output
-            $outputFile = pathinfo($conversion->input_file, PATHINFO_FILENAME) . '.docx';
-            $outputPath = $outputDir . '/' . $outputFile;
-
-            // ❗ Check file thực sự được tạo
-            if (!file_exists($outputPath)) {
-                throw new \Exception("Output file not found after convert");
             }
 
             $conversion->update([
