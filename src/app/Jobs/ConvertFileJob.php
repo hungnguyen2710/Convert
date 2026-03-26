@@ -10,6 +10,8 @@ class ConvertFileJob implements ShouldQueue
 {
     use Queueable;
 
+    public $conversion;
+
     /**
      * Create a new job instance.
      */
