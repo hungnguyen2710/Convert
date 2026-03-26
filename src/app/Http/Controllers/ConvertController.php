@@ -28,7 +28,7 @@ class ConvertController extends Controller
             'status' => 'pending'
         ]);
 
-        ConvertFileJob::dispatch($conversion);
+        ConvertFileJob::dispatch($conversion->id);
 
         return response()->json([
             'id' => $conversion->id,
