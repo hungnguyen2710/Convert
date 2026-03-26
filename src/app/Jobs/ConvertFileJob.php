@@ -13,17 +13,11 @@ class ConvertFileJob implements ShouldQueue
 
     public int $conversionId;
 
-    /**
-     * Create a new job instance.
-     */
     public function __construct(int $conversionId)
     {
         $this->conversionId = $conversionId;
     }
 
-    /**
-     * Execute the job.
-     */
     public function handle(): void
     {
         $conversion = Conversion::find($this->conversionId);
@@ -34,41 +28,55 @@ class ConvertFileJob implements ShouldQueue
         }
 
         try {
-            // Update status
             $conversion->update(['status' => 'processing']);
 
             $input = storage_path('app/input/' . $conversion->input_file);
             $outputDir = storage_path('app/output');
 
-            // Check file tồn tại
+            // ✅ Check file tồn tại
             if (!file_exists($input)) {
                 throw new \Exception("Input file not found: " . $input);
             }
 
-            // Tạo folder output nếu chưa có
+            // ✅ Tạo thư mục output
             if (!file_exists($outputDir)) {
                 mkdir($outputDir, 0777, true);
             }
 
-            // Command convert (an toàn)
-            $cmd = "libreoffice --headless --nologo --nofirststartwizard --convert-to docx "
+            // ✅ FIX QUAN TRỌNG: LibreOffice trong Docker
+            $profileDir = '/tmp/libreoffice-profile';
+
+            if (!file_exists($profileDir)) {
+                mkdir($profileDir, 0777, true);
+            }
+
+            // ✅ Command chuẩn production
+            $cmd = "HOME=/tmp /usr/bin/libreoffice --headless --nologo --nofirststartwizard "
+                . "-env:UserInstallation=file://{$profileDir} "
+                . "--convert-to docx "
                 . escapeshellarg($input)
                 . " --outdir "
                 . escapeshellarg($outputDir);
 
             Log::info("Running command: " . $cmd);
 
-            exec($cmd, $out, $code);
+            exec($cmd . " 2>&1", $out, $code);
 
-            // Log output
             Log::info("LibreOffice output: " . implode("\n", $out));
 
-            if ($code !== 0) {
+            // ❗ Check kỹ hơn (tránh fake DONE)
+            if ($code !== 0 || empty($out)) {
                 throw new \Exception("Convert failed: " . implode("\n", $out));
             }
 
-            // Tạo tên file output
+            // ✅ Xác định file output
             $outputFile = pathinfo($conversion->input_file, PATHINFO_FILENAME) . '.docx';
+            $outputPath = $outputDir . '/' . $outputFile;
+
+            // ❗ Check file thực sự được tạo
+            if (!file_exists($outputPath)) {
+                throw new \Exception("Output file not found after convert");
+            }
 
             $conversion->update([
                 'status' => 'done',
