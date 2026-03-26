@@ -28,7 +28,6 @@ services:
 
   worker:
     build: ./docker/php
-    container_name: convert_worker
     restart: always
     volumes:
       - ./src:/var/www
@@ -49,10 +48,11 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: laravel
-      MYSQL_CHARSET: utf8mb4
-      MYSQL_COLLATION: utf8mb4_unicode_ci
-    ports:
-      - "3306:3306"  # ⚠️ nếu production → nên bỏ
+      MYSQL_USER: laravel
+      MYSQL_PASSWORD: laravel
+    # ⚠️ production nên KHÔNG expose port
+    # ports:
+    #   - "3306:3306"
     volumes:
       - db_data:/var/lib/mysql
 
